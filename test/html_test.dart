@@ -17,7 +17,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 void main() {
   int port;
   setUpAll(() async {
-    final channel = spawnHybridCode(r'''
+    var channel = spawnHybridCode(r'''
       // @dart=2.7
       import 'dart:io';
 
@@ -34,7 +34,7 @@ void main() {
       }
     ''', stayAlive: true);
 
-    port = await channel.stream.first as int;
+    port = await channel.stream.first;
   });
 
   WebSocketChannel channel;
@@ -43,18 +43,15 @@ void main() {
   });
 
   test('communicates using an existing WebSocket', () async {
-    final webSocket = WebSocket('ws://localhost:$port');
+    var webSocket = WebSocket('ws://localhost:$port');
     channel = HtmlWebSocketChannel(webSocket);
 
-    final queue = StreamQueue(channel.stream);
+    var queue = StreamQueue(channel.stream);
     channel.sink.add('foo');
     expect(await queue.next, equals('foo'));
 
     channel.sink.add(Uint8List.fromList([1, 2, 3, 4, 5]));
-    expect(
-      await _decodeBlob(await queue.next as Blob),
-      equals([1, 2, 3, 4, 5]),
-    );
+    expect(await _decodeBlob(await queue.next), equals([1, 2, 3, 4, 5]));
 
     webSocket.binaryType = 'arraybuffer';
     channel.sink.add(Uint8List.fromList([1, 2, 3, 4, 5]));
@@ -62,12 +59,12 @@ void main() {
   });
 
   test('communicates using an existing open WebSocket', () async {
-    final webSocket = WebSocket('ws://localhost:$port');
+    var webSocket = WebSocket('ws://localhost:$port');
     await webSocket.onOpen.first;
 
     channel = HtmlWebSocketChannel(webSocket);
 
-    final queue = StreamQueue(channel.stream);
+    var queue = StreamQueue(channel.stream);
     channel.sink.add('foo');
     expect(await queue.next, equals('foo'));
   });
@@ -75,7 +72,7 @@ void main() {
   test('.connect defaults to binary lists', () async {
     channel = HtmlWebSocketChannel.connect('ws://localhost:$port');
 
-    final queue = StreamQueue(channel.stream);
+    var queue = StreamQueue(channel.stream);
     channel.sink.add('foo');
     expect(await queue.next, equals('foo'));
 
@@ -87,7 +84,7 @@ void main() {
       () async {
     channel = WebSocketChannel.connect(Uri.parse('ws://localhost:$port'));
 
-    final queue = StreamQueue(channel.stream);
+    var queue = StreamQueue(channel.stream);
     channel.sink.add('foo');
     expect(await queue.next, equals('foo'));
 
@@ -99,19 +96,18 @@ void main() {
     channel = HtmlWebSocketChannel.connect('ws://localhost:$port',
         binaryType: BinaryType.blob);
 
-    final queue = StreamQueue(channel.stream);
+    var queue = StreamQueue(channel.stream);
     channel.sink.add('foo');
     expect(await queue.next, equals('foo'));
 
     channel.sink.add(Uint8List.fromList([1, 2, 3, 4, 5]));
-    expect(
-        await _decodeBlob(await queue.next as Blob), equals([1, 2, 3, 4, 5]));
+    expect(await _decodeBlob(await queue.next), equals([1, 2, 3, 4, 5]));
   });
 
   test('.connect wraps a connection error in WebSocketChannelException',
       () async {
     // Spawn a server that will immediately reject the connection.
-    final serverChannel = spawnHybridCode(r'''
+    var serverChannel = spawnHybridCode(r'''
       import 'dart:io';
 
       import 'package:stream_channel/stream_channel.dart';
@@ -127,14 +123,15 @@ void main() {
 
     // TODO(nweiz): Make this channel use a port number that's guaranteed to be
     // invalid.
-    final channel = HtmlWebSocketChannel.connect(
+    var channel = HtmlWebSocketChannel.connect(
         'ws://localhost:${await serverChannel.stream.first}');
-    expect(channel.stream.toList(), throwsA(isA<WebSocketChannelException>()));
+    expect(channel.stream.toList(),
+        throwsA(TypeMatcher<WebSocketChannelException>()));
   });
 }
 
 Future<List<int>> _decodeBlob(Blob blob) async {
-  final reader = FileReader();
+  var reader = FileReader();
   reader.readAsArrayBuffer(blob);
   await reader.onLoad.first;
   return reader.result as Uint8List;

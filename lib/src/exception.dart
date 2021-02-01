@@ -9,11 +9,13 @@ class WebSocketChannelException implements Exception {
   final String message;
 
   /// The exception that caused this one, if available.
-  final Object inner;
+  final inner;
 
   WebSocketChannelException([this.message]) : inner = null;
 
-  WebSocketChannelException.from(this.inner) : message = inner.toString();
+  WebSocketChannelException.from(inner)
+      : message = inner.toString(),
+        inner = inner;
 
   @override
   String toString() => message == null

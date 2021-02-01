@@ -3,22 +3,24 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @TestOn('vm')
+
 import 'dart:io';
 
 import 'package:test/test.dart';
+
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 void main() {
-  HttpServer server;
+  var server;
   tearDown(() async {
     if (server != null) await server.close();
   });
 
   test('communicates using existing WebSockets', () async {
     server = await HttpServer.bind('localhost', 0);
-    server.transform(WebSocketTransformer()).listen((WebSocket webSocket) {
-      final channel = IOWebSocketChannel(webSocket);
+    server.transform(WebSocketTransformer()).listen((webSocket) {
+      var channel = IOWebSocketChannel(webSocket);
       channel.sink.add('hello!');
       channel.stream.listen((request) {
         expect(request, equals('ping'));
@@ -27,8 +29,8 @@ void main() {
       });
     });
 
-    final webSocket = await WebSocket.connect('ws://localhost:${server.port}');
-    final channel = IOWebSocketChannel(webSocket);
+    var webSocket = await WebSocket.connect('ws://localhost:${server.port}');
+    var channel = IOWebSocketChannel(webSocket);
 
     var n = 0;
     channel.stream.listen((message) {
@@ -49,15 +51,15 @@ void main() {
 
   test('.connect communicates immediately', () async {
     server = await HttpServer.bind('localhost', 0);
-    server.transform(WebSocketTransformer()).listen((WebSocket webSocket) {
-      final channel = IOWebSocketChannel(webSocket);
+    server.transform(WebSocketTransformer()).listen((webSocket) {
+      var channel = IOWebSocketChannel(webSocket);
       channel.stream.listen((request) {
         expect(request, equals('ping'));
         channel.sink.add('pong');
       });
     });
 
-    final channel = IOWebSocketChannel.connect('ws://localhost:${server.port}');
+    var channel = IOWebSocketChannel.connect('ws://localhost:${server.port}');
     channel.sink.add('ping');
 
     channel.stream.listen(
@@ -71,15 +73,15 @@ void main() {
   test('.connect communicates immediately using platform independent api',
       () async {
     server = await HttpServer.bind('localhost', 0);
-    server.transform(WebSocketTransformer()).listen((WebSocket webSocket) {
-      final channel = IOWebSocketChannel(webSocket);
+    server.transform(WebSocketTransformer()).listen((webSocket) {
+      var channel = IOWebSocketChannel(webSocket);
       channel.stream.listen((request) {
         expect(request, equals('ping'));
         channel.sink.add('pong');
       });
     });
 
-    final channel =
+    var channel =
         WebSocketChannel.connect(Uri.parse('ws://localhost:${server.port}'));
     channel.sink.add('ping');
 
@@ -93,16 +95,16 @@ void main() {
 
   test('.connect with an immediate call to close', () async {
     server = await HttpServer.bind('localhost', 0);
-    server.transform(WebSocketTransformer()).listen((WebSocket webSocket) {
+    server.transform(WebSocketTransformer()).listen((webSocket) {
       expect(() async {
-        final channel = IOWebSocketChannel(webSocket);
+        var channel = IOWebSocketChannel(webSocket);
         await channel.stream.drain();
         expect(channel.closeCode, equals(5678));
         expect(channel.closeReason, equals('raisin'));
       }(), completes);
     });
 
-    final channel = IOWebSocketChannel.connect('ws://localhost:${server.port}');
+    var channel = IOWebSocketChannel.connect('ws://localhost:${server.port}');
     await channel.sink.close(5678, 'raisin');
   });
 
@@ -114,48 +116,41 @@ void main() {
       request.response.close();
     });
 
-    final channel = IOWebSocketChannel.connect('ws://localhost:${server.port}');
-    expect(channel.stream.drain(), throwsA(isA<WebSocketChannelException>()));
+    var channel = IOWebSocketChannel.connect('ws://localhost:${server.port}');
+    expect(channel.stream.drain(),
+        throwsA(TypeMatcher<WebSocketChannelException>()));
   });
 
   test('.protocols fail', () async {
-    const passedProtocol = 'passed-protocol';
-    const failedProtocol = 'failed-protocol';
-    String selector(List<String> receivedProtocols) => passedProtocol;
+    var passedProtocol = 'passed-protocol';
+    var failedProtocol = 'failed-protocol';
+    var selector = (List<String> receivedProtocols) => passedProtocol;
 
     server = await HttpServer.bind('localhost', 0);
-    server.listen((HttpRequest request) {
-      expect(
-        WebSocketTransformer.upgrade(request, protocolSelector: selector),
-        throwsException,
-      );
+    server.listen((request) {
+      expect(WebSocketTransformer.upgrade(request, protocolSelector: selector),
+          throwsException);
     });
 
-    final channel = IOWebSocketChannel.connect(
-      'ws://localhost:${server.port}',
-      protocols: [failedProtocol],
-    );
-    expect(
-      channel.stream.drain(),
-      throwsA(isA<WebSocketChannelException>()),
-    );
+    var channel = IOWebSocketChannel.connect('ws://localhost:${server.port}',
+        protocols: [failedProtocol]);
+    expect(channel.stream.drain(),
+        throwsA(TypeMatcher<WebSocketChannelException>()));
   });
 
   test('.protocols pass', () async {
-    const passedProtocol = 'passed-protocol';
-    String selector(List<String> receivedProtocols) => passedProtocol;
+    var passedProtocol = 'passed-protocol';
+    var selector = (List<String> receivedProtocols) => passedProtocol;
 
     server = await HttpServer.bind('localhost', 0);
-    server.listen((HttpRequest request) async {
-      final webSocket = await WebSocketTransformer.upgrade(
-        request,
-        protocolSelector: selector,
-      );
+    server.listen((request) async {
+      var webSocket = await WebSocketTransformer.upgrade(request,
+          protocolSelector: selector);
       expect(webSocket.protocol, passedProtocol);
       await webSocket.close();
     });
 
-    final channel = IOWebSocketChannel.connect('ws://localhost:${server.port}',
+    var channel = IOWebSocketChannel.connect('ws://localhost:${server.port}',
         protocols: [passedProtocol]);
     await channel.stream.drain();
     expect(channel.protocol, passedProtocol);
